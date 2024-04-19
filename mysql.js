@@ -1,10 +1,10 @@
 const mysql =require("mysql");
 
 var pool =mysql.createPool({
-    "user":"root",
-    "password":"",
-    "database":"papelaria",
-    "host":"localhost",
+    "user":"355859",
+    "password":"140204160401Fm",
+    "database":"felipecriadorweb_banco",
+    "host":"mysql-felipecriadorweb.alwaysdata.net",
     "port":3306
 
 });
