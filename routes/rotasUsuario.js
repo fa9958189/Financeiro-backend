@@ -3,6 +3,7 @@ const router = express.Router();
 const mysql = require("../mysql").pool; // Importa o pool de conexões MySQL
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
+const app = require("../app");
 
 router.post("/login", (req, res, next) => {
     const { email, senha } = req.body;
