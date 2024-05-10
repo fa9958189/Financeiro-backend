@@ -4,17 +4,17 @@ const mysql = require("../mysql").pool;
 
 // Rota para cadastrar um orçamento
 router.post("/", (req, res) => {
-    const { descricao_item, quantidade, valor_unitario, total } = req.body;
+    const { id_produto, quantidade, valor_unitario, total } = req.body;
 
     // Verifica se todos os campos obrigatórios estão presentes
-    if (!descricao_item || !quantidade || !valor_unitario || !total) {
+    if (!id_produto || !quantidade || !valor_unitario || !total) {
         return res.status(400).json({ mensagem: "Todos os campos são obrigatórios." });
     }
 
     // Insira os dados do orçamento no banco de dados
     mysql.query(
-        "INSERT INTO orcamento (descricao_item, quantidade, valor_unitario, total) VALUES (?, ?, ?, ?)",
-        [descricao_item, quantidade, valor_unitario, total],
+        "INSERT INTO orcamento (id_produto, quantidade, valor_unitario, total) VALUES (?, ?, ?, ?)",
+        [id_produto, quantidade, valor_unitario, total],
         (error, results, fields) => {
             if (error) {
                 console.error("Erro ao cadastrar orçamento:", error.message);
@@ -45,7 +45,19 @@ router.delete("/:id", (req, res) => {
 
 // Rota para listar todos os orçamentos
 router.get("/", (req, res) => {
-    mysql.query("SELECT * FROM orcamento", (error, results, fields) => {
+    mysql.query(`SELECT  
+    
+    orcamento.id as id,
+    orcamento.id_produto as id_produto, 
+    orcamento.quantidade as quantidade, 
+    orcamento.valor_unitario as valor_unitario, 
+    orcamento.total as total,
+    produto.descricao as descricao
+    FROM orcamento 
+    INNER JOIN produto on
+    orcamento.id_produto=produto.id
+    
+    `, (error, results, fields) => {
         if (error) {
             return res.status(500).json({ error: error.message });
         }
@@ -56,5 +68,7 @@ router.get("/", (req, res) => {
         });
     });
 });
+
+
 
 module.exports = router;
