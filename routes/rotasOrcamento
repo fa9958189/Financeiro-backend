@@ -42,7 +42,6 @@ router.delete("/:id", (req, res) => {
     });
 });
 
-
 // Rota para listar todos os orçamentos
 router.get("/", (req, res) => {
     mysql.query(`SELECT  
@@ -68,7 +67,5 @@ router.get("/", (req, res) => {
         });
     });
 });
-
-
 
 module.exports = router;
