@@ -77,7 +77,7 @@ router.get("/:id", (req, res, next) => {
 router.get("/", (req, res, next) => {
     const { id } = req.params;
 
-    mysql.query("SELECT * FROM usuario ", (error, results, fields) => {
+    mysql.query("SELECT * FROM cliente ", (error, results, fields) => {
         if (error) {
             return res.status(500).send({
                 error: error.message
@@ -86,40 +86,52 @@ router.get("/", (req, res, next) => {
 
         if (results.length === 0) {
             return res.status(404).send({
-                mensagem: "Usuário não encontrado."
+                mensagem: "Cliente não encontrado."
             });
         }
 
         res.status(200).send({
             mensagem: "Aqui está o usuário solicitado",
-            usuario: results
+            clientes: results
         });
     });
 });
 
 router.post('/', (req, res, next) => {
-    const { nome, email, senha } = req.body;
+    const {
+        nome,
+        cpf,
+        data,
+        bairro,
+        logradouro,
+        cidade,
+        uf,
+        cep,
+        contato
+    } = req.body;
 
     // Validação dos campos
     let msg = [];
     if (!nome || nome.length < 3) {
         msg.push({ mensagem: "Nome inválido! Deve ter pelo menos 3 caracteres." });
     }
-    if (!email || !validateEmail(email)) {
-        msg.push({ mensagem: "E-mail inválido!" });
+    if (!cpf || cpf.length !== 11) {
+        msg.push({ mensagem: "CPF inválido! Deve conter 11 dígitos." });
     }
-    if (!senha || senha.length < 6) {
-        msg.push({ mensagem: "Senha inválida! Deve ter pelo menos 6 caracteres." });
+    if (!cep || cep.length !== 8) {
+        msg.push({ mensagem: "CEP inválido! Deve conter 8 dígitos." });
     }
+    // Aqui você pode adicionar mais validações para os outros campos, se necessário
+
     if (msg.length > 0) {
         return res.status(400).send({
-            mensagem: "Falha ao cadastrar usuário.",
+            mensagem: "Falha ao cadastrar cliente.",
             erros: msg
         });
     }
 
-    // Verifica se o email já está cadastrado
-    mysql.query('SELECT * FROM usuario WHERE email = ?', [email], (error, results, fields) => {
+    // Verifica se o CPF já está cadastrado
+    mysql.query('SELECT * FROM cliente WHERE cpf = ?', [cpf], (error, results, fields) => {
         if (error) {
             return res.status(500).send({
                 error: error.message,
@@ -129,39 +141,29 @@ router.post('/', (req, res, next) => {
 
         if (results.length > 0) {
             return res.status(400).send({
-                mensagem: "E-mail já cadastrado."
+                mensagem: "CPF já cadastrado."
             });
         }
 
-        // Hash da senha antes de salvar no banco de dados
-        bcrypt.hash(senha, 10, (hashError, hashedPassword) => {
-            if (hashError) {
+        // Insere o novo cliente no banco de dados
+        mysql.query('INSERT INTO cliente (nome, cpf, data, bairro, logradouro, cidade, uf, cep, contato) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)', [nome, cpf, data, bairro, logradouro, cidade, uf, cep, contato], (insertError, results, fields) => {
+            if (insertError) {
                 return res.status(500).send({
-                    error: hashError.message,
+                    error: insertError.message,
                     response: null
                 });
             }
-
-            // Insere o novo usuário no banco de dados
-            mysql.query('INSERT INTO usuario (nome, email, senha) VALUES (?, ?, ?)', [nome, email, hashedPassword], (insertError, results, fields) => {
-                if (insertError) {
-                    return res.status(500).send({
-                        error: insertError.message,
-                        response: null
-                    });
+            res.status(201).send({
+                mensagem: "Cliente cadastrado com sucesso!",
+                cliente: {
+                    id: results.insertId,
+                    nome: nome
                 }
-                res.status(201).send({
-                    mensagem: "Cadastro criado com sucesso!",
-                    usuario: {
-                        id: results.insertId,
-                        nome: nome,
-                        email: email
-                    }
-                });
             });
         });
     });
 });
+
 
 // Função para validar formato de e-mail
 function validateEmail(email) {
