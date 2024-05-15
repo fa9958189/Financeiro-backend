@@ -5,6 +5,77 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const app = require("../app");
 
+
+
+router.patch("/", (req, res, next) => {
+  
+    const {
+        nome,
+        cpf,
+        data,
+        bairro,
+        logradouro,
+        cidade,
+        uf,
+        cep,
+        contato,
+        id
+    } = req.body;
+
+    // Validação dos campos
+    let msg = [];
+    if (!nome || nome.length < 3) {
+        msg.push({ mensagem: "Nome inválido! Deve ter pelo menos 3 caracteres." });
+    }
+    if (!cpf || cpf.length !== 11) {
+        msg.push({ mensagem: "CPF inválido! Deve conter 11 dígitos." });
+    }
+    if (!cep || cep.length !== 8) {
+        msg.push({ mensagem: "CEP inválido! Deve conter 8 dígitos." });
+    }
+    // Aqui você pode adicionar mais validações para os outros campos, se necessário
+
+    if (msg.length > 0) {
+      
+        return res.status(400).send({
+            mensagem: "Falha ao cadastrar cliente.",
+            erros: msg
+        });
+    }
+
+
+
+        // Insere o novo cliente no banco de dados
+    
+        mysql.query(' UPDATE cliente SET nome=?, cpf=?, data=?, bairro=?, logradouro=?, cidade=?, uf=?, cep=?, contato=? WHERE id_cliente=?', [
+            nome,
+            cpf,
+            data,
+            bairro,
+            logradouro,
+            cidade,
+            uf,
+            cep,
+            contato,
+            id
+        ],(insertError, results, fields) => {
+          console.log(insertError)
+            if (insertError) {
+                return res.status(500).send({
+                    error: insertError.message,
+                    response: null
+                });
+            }
+            res.status(201).send({
+                mensagem: "Cliente cadastrado com sucesso!",
+                cliente: {
+                    id: results.insertId,
+                    nome: nome
+                }
+            });
+        });
+
+});
 router.post("/login", (req, res, next) => {
     const { email, senha } = req.body;
 
@@ -55,8 +126,9 @@ router.post("/login", (req, res, next) => {
 router.get("/:id", (req, res, next) => {
     const { id } = req.params;
 
-    mysql.query("SELECT * FROM usuario WHERE id=?", [id], (error, results, fields) => {
+    mysql.query("SELECT * FROM cliente WHERE id_cliente=?", [id], (error, results, fields) => {
         if (error) {
+           
             return res.status(500).send({
                 error: error.message
             });
@@ -64,18 +136,18 @@ router.get("/:id", (req, res, next) => {
 
         if (results.length === 0) {
             return res.status(404).send({
-                mensagem: "Usuário não encontrado."
+                mensagem: "Cliente não encontrado."
             });
         }
 
         res.status(200).send({
-            mensagem: "Aqui está o usuário solicitado",
+            mensagem: "Aqui está o cliente solicitado",
             usuario: results[0]
         });
     });
 });
 router.get("/", (req, res, next) => {
-    const { id } = req.params;
+ 
 
     mysql.query("SELECT * FROM cliente ", (error, results, fields) => {
         if (error) {
@@ -98,6 +170,7 @@ router.get("/", (req, res, next) => {
 });
 
 router.post('/', (req, res, next) => {
+  
     const {
         nome,
         cpf,
@@ -163,47 +236,7 @@ router.post('/', (req, res, next) => {
         });
     });
 });
-
-
-// Função para validar formato de e-mail
-function validateEmail(email) {
-    const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return re.test(String(email).toLowerCase());
-}
-
-router.put("/", (req, res, next) => {
-    const { id, nome, email, senha } = req.body;
-
-    if (!id || !nome || !email || !senha) {
-        return res.status(400).send({ error: "Parâmetros inválidos" });
-    }
-
-    // Verifica se o usuário existe antes de atualizá-lo
-    mysql.query('SELECT * FROM usuario WHERE id = ?', [id], (error, results, fields) => {
-        if (error) {
-            return res.status(500).send({
-                error: error.message
-            });
-        }
-
-        if (results.length === 0) {
-            return res.status(404).send({
-                mensagem: "Usuário não encontrado."
-            });
-        }
-
-        // Atualiza o usuário no banco de dados
-        mysql.query("UPDATE usuario SET nome=?, email=?, senha=? WHERE id=?", [nome, email, senha, id], (updateError, results, fields) => {
-            if (updateError) {
-                return res.status(500).send({
-                    error: updateError.message
-                });
-            }
-            res.status(200).send({ mensagem: "Usuário atualizado com sucesso!" });
-        });
-    });
-});
-
+4
 router.delete("/:id", (req, res, next) => {
     const { id } = req.params;
 
@@ -236,6 +269,7 @@ router.delete("/:id", (req, res, next) => {
         });
     });
 });
+
 
 
 module.exports = router;
