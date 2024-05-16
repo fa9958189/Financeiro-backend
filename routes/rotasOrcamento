@@ -25,6 +25,28 @@ router.post("/", (req, res) => {
     );
 });
 
+
+
+const handleSelectClient = (clientId) => {
+    setSelectedClientId(clientId);
+    // Verificar se foi selecionado um cliente
+    if (clientId) {
+      // Chamar a API para buscar as informações do cliente
+      fetch(`http://localhost:5000/cliente/${clientId}`)
+        .then(response => response.json())
+        .then(data => {
+          // Definir as informações do cliente selecionado
+          setSelectedClientInfo(data.cliente);
+        })
+        .catch(error => console.error('Erro ao buscar informações do cliente:', error));
+    } else {
+      // Limpar as informações do cliente selecionado se nenhum cliente for selecionado
+      setSelectedClientInfo(null);
+    }
+  };
+
+  
+
 // Rota para excluir um orçamento pelo número sequencial
 router.delete("/:id", (req, res) => {
     const { id } = req.params;
@@ -39,6 +61,32 @@ router.delete("/:id", (req, res) => {
         }
 
         res.status(200).json({ mensagem: "Orçamento excluído com sucesso!" });
+    });
+});
+
+
+
+// Rota para buscar informações de um cliente pelo ID
+router.get("/:id", (req, res) => {
+    const { id } = req.params;
+
+    // Verifica se o ID do cliente foi fornecido
+    if (!id) {
+        return res.status(400).json({ error: "ID do cliente não fornecido" });
+    }
+
+    // Consulta o banco de dados para obter as informações do cliente com base no ID
+    mysql.query("SELECT * FROM cliente WHERE id=?", [id], (error, results, fields) => {
+        if (error) {
+            return res.status(500).json({ error: error.message });
+        }
+
+        if (results.length === 0) {
+            return res.status(404).json({ error: "Cliente não encontrado" });
+        }
+
+        const cliente = results[0];
+        res.status(200).json({ cliente });
     });
 });
 
