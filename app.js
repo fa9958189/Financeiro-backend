@@ -34,6 +34,7 @@ const rotaEntrada = require("./routes/rotasEntrada");
 const rotaSaida = require("./routes/rotasSaida");
 const rotaEstoque = require("./routes/rotasEstoque");
 const rotaOrcamento = require("./routes/rotasOrcamento"); // Adicionando a rota de Orçamento
+const rotaItensOrcamento = require("./routes/rotaItensOrcamento"); // Adicionando a rota de Orçamento
 const rotaCliente = require("./routes/rotasCliente"); // Adicionando a rota de Orçamento
 
 // Uso das rotas
@@ -43,6 +44,7 @@ app.use("/entrada", rotaEntrada);
 app.use("/saida", rotaSaida);
 app.use("/estoque", rotaEstoque);
 app.use("/orcamento", rotaOrcamento); 
+app.use("/itensorcamento", rotaItensOrcamento); 
 app.use("/cliente", rotaCliente); 
 
 // Tratamento de erros para rotas não encontradas

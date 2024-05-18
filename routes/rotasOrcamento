@@ -4,18 +4,14 @@ const mysql = require("../mysql").pool;
 
 // Rota para cadastrar um orçamento
 router.post("/", (req, res) => {
-    const { id_produto, quantidade, valor_unitario, total } = req.body;
-
-    // Verifica se todos os campos obrigatórios estão presentes
-    if (!id_produto || !quantidade || !valor_unitario || !total) {
-        return res.status(400).json({ mensagem: "Todos os campos são obrigatórios." });
-    }
-
+    const { id } = req.body;
+     console.log(id)
     // Insira os dados do orçamento no banco de dados
     mysql.query(
-        "INSERT INTO orcamento (id_produto, quantidade, valor_unitario, total) VALUES (?, ?, ?, ?)",
-        [id_produto, quantidade, valor_unitario, total],
+        "INSERT INTO orcamento (id_cliente) VALUES (?)",
+        [id],
         (error, results, fields) => {
+            console.log(error.message)
             if (error) {
                 console.error("Erro ao cadastrar orçamento:", error.message);
                 return res.status(500).json({ mensagem: "Erro ao cadastrar orçamento. " + error.message });
@@ -24,28 +20,7 @@ router.post("/", (req, res) => {
         }
     );
 });
-
-
-
-const handleSelectClient = (clientId) => {
-    setSelectedClientId(clientId);
-    // Verificar se foi selecionado um cliente
-    if (clientId) {
-      // Chamar a API para buscar as informações do cliente
-      fetch(`http://localhost:5000/cliente/${clientId}`)
-        .then(response => response.json())
-        .then(data => {
-          // Definir as informações do cliente selecionado
-          setSelectedClientInfo(data.cliente);
-        })
-        .catch(error => console.error('Erro ao buscar informações do cliente:', error));
-    } else {
-      // Limpar as informações do cliente selecionado se nenhum cliente for selecionado
-      setSelectedClientInfo(null);
-    }
-  };
-
-  
+ 
 
 // Rota para excluir um orçamento pelo número sequencial
 router.delete("/:id", (req, res) => {
@@ -67,45 +42,57 @@ router.delete("/:id", (req, res) => {
 
 
 // Rota para buscar informações de um cliente pelo ID
-router.get("/:id", (req, res) => {
+router.get("/:id", (req, res, next) => {
     const { id } = req.params;
 
-    // Verifica se o ID do cliente foi fornecido
-    if (!id) {
-        return res.status(400).json({ error: "ID do cliente não fornecido" });
-    }
-
-    // Consulta o banco de dados para obter as informações do cliente com base no ID
-    mysql.query("SELECT * FROM cliente WHERE id=?", [id], (error, results, fields) => {
+    mysql.query(`
+    SELECT  
+    orcamento.id as id,
+    orcamento.id_cliente as id_cliente, 
+    orcamento.totalgeral as totalgeral,
+    orcamento.data as data,
+    cliente.nome as nome
+            FROM orcamento 
+            INNER JOIN cliente on
+                orcamento.id_cliente=cliente.id_cliente
+                where orcamento.id=?
+    
+    `, [id], (error, results, fields) => {
         if (error) {
-            return res.status(500).json({ error: error.message });
+           
+            return res.status(500).send({
+                error: error.message
+            });
         }
 
         if (results.length === 0) {
-            return res.status(404).json({ error: "Cliente não encontrado" });
+            return res.status(404).send({
+                mensagem: "Orcamento não encontrado."
+            });
         }
 
-        const cliente = results[0];
-        res.status(200).json({ cliente });
+        res.status(200).send({
+            mensagem: "Aqui está o cliente solicitado",
+            orcamento: results
+        });
     });
 });
 
 // Rota para listar todos os orçamentos
 router.get("/", (req, res) => {
-    mysql.query(`SELECT  
-    
-    orcamento.id as id,
-    orcamento.id_produto as id_produto, 
-    orcamento.quantidade as quantidade, 
-    orcamento.valor_unitario as valor_unitario, 
-    orcamento.total as total,
-    produto.descricao as descricao
-    FROM orcamento 
-    INNER JOIN produto on
-    orcamento.id_produto=produto.id
-    
+    mysql.query(`
+        SELECT  
+            orcamento.id as id,
+            orcamento.id_cliente as id_cliente, 
+            orcamento.totalgeral as totalgeral,
+            orcamento.data as data,
+            cliente.nome as nome
+        FROM orcamento 
+        INNER JOIN cliente on
+            orcamento.id_cliente=cliente.id_cliente
     `, (error, results, fields) => {
         if (error) {
+            console.error('Erro ao executar query:', error.message); // Verifica se error não é null
             return res.status(500).json({ error: error.message });
         }
 
@@ -115,5 +102,6 @@ router.get("/", (req, res) => {
         });
     });
 });
+
 
 module.exports = router;
