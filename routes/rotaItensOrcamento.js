@@ -4,12 +4,15 @@ const mysql = require("../mysql").pool;
 
 // Rota para cadastrar um orçamento
 router.post("/", (req, res) => {
-    const { id } = req.body;
-     console.log(id)
+    const {id_orcamento,
+        quantidade,
+        valor_unitario,
+        id_produto } = req.body;
+ 
     // Insira os dados do orçamento no banco de dados
     mysql.query(
-        "INSERT INTO orcamento (id_cliente) VALUES (?)",
-        [id],
+        "IINSERT INTO `itens_orcamento`( `id_orcamento`, `id_produto`, `quantidade`, `valor_unitario`) VALUES (?,?,?,?)",
+        [id_orcamento,id_produto,quantidade,valor_unitario],
         (error, results, fields) => {
             console.log(error.message)
             if (error) {
