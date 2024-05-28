@@ -12,14 +12,16 @@ router.post("/", (req, res) => {
         INSERT INTO itens_orcamento (id_orcamento, id_produto, quantidade, valor_unitario)
         VALUES (?, ?, ?, ?)
     `;
-
-    mysql.query(query, [id_orcamento, id_produto, quantidade, valor_unitario], (error, results) => {
+    mysql.getConnection((error,conn)=>{
+    conn.query(query, [id_orcamento, id_produto, quantidade, valor_unitario], (error, results) => {
+        conn.release();
         if (error) {
             console.error("Erro ao cadastrar orçamento:", error.message);
             return res.status(500).json({ mensagem: "Erro ao cadastrar orçamento. " + error.message });
         }
         res.status(201).json({ mensagem: "Orçamento cadastrado com sucesso!" });
     });
+});
 });
 
 // Rota para listar todos os orçamentos
@@ -37,8 +39,9 @@ router.get("/:id", (req, res) => {
         INNER JOIN produto ON itens_orcamento.id_produto = produto.id
         WHERE itens_orcamento.id_orcamento = ?
     `;
-
-    mysql.query(query, [id], (error, results) => {
+    mysql.getConnection((error,conn)=>{
+    conn.query(query, [id], (error, results) => {
+        conn.release();
         if (error) {
             console.error('Erro ao executar query:', error.message);
             return res.status(500).json({ error: error.message });
@@ -50,6 +53,7 @@ router.get("/:id", (req, res) => {
         });
     });
 });
+});
 
 
 router.delete("/:id", (req, res, next) => {
@@ -60,7 +64,9 @@ router.delete("/:id", (req, res, next) => {
     }
 
     // Verifica se o item de orçamento existe antes de excluí-lo
-    mysql.query('SELECT * FROM itens_orcamento WHERE id = ?', [id], (error, results, fields) => {
+    mysql.getConnection((error,conn)=>{
+    conn.query('SELECT * FROM itens_orcamento WHERE id = ?', [id], (error, results, fields) => {
+        conn.release();
         if (error) {
             return res.status(500).send({
                 error: error.message
@@ -74,7 +80,8 @@ router.delete("/:id", (req, res, next) => {
         }
 
         // Exclui o item de orçamento do banco de dados
-        mysql.query("DELETE FROM itens_orcamento WHERE id=?", [id], (deleteError, results, fields) => {
+        conn.query("DELETE FROM itens_orcamento WHERE id=?", [id], (deleteError, results, fields) => {
+            conn.release();
             if (deleteError) {
                 return res.status(500).send({
                     error: deleteError.message
@@ -83,6 +90,7 @@ router.delete("/:id", (req, res, next) => {
             res.status(200).send({ mensagem: "Item de orçamento excluído com sucesso!" });
         });
     });
+});
 });
 
 

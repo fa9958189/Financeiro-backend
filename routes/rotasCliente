@@ -46,8 +46,8 @@ router.patch("/", (req, res, next) => {
 
 
         // Insere o novo cliente no banco de dados
-    
-        mysql.query(' UPDATE cliente SET nome=?, cpf=?, data=?, bairro=?, logradouro=?, cidade=?, uf=?, cep=?, contato=? WHERE id_cliente=?', [
+        mysql.getConnection((error,conn)=>{
+        conn.query(' UPDATE cliente SET nome=?, cpf=?, data=?, bairro=?, logradouro=?, cidade=?, uf=?, cep=?, contato=? WHERE id_cliente=?', [
             nome,
             cpf,
             data,
@@ -59,6 +59,7 @@ router.patch("/", (req, res, next) => {
             contato,
             id
         ],(insertError, results, fields) => {
+            conn.release();
           console.log(insertError)
             if (insertError) {
                 return res.status(500).send({
@@ -74,12 +75,13 @@ router.patch("/", (req, res, next) => {
                 }
             });
         });
-
+    })
 });
 router.post("/login", (req, res, next) => {
     const { email, senha } = req.body;
-
-    mysql.query("SELECT * FROM usuario WHERE email = ?", [email], (error, results, fields) => {
+    mysql.getConnection((error,conn)=>{
+    conn.query("SELECT * FROM usuario WHERE email = ?", [email], (error, results, fields) => {
+        conn.release();
         if (error) {
             console.error("Erro ao buscar usuário:", error.message);
             return res.status(500).send({
@@ -122,11 +124,13 @@ router.post("/login", (req, res, next) => {
         });
     });
 });
+});
 
 router.get("/:id", (req, res, next) => {
     const { id } = req.params;
-
-    mysql.query("SELECT * FROM cliente WHERE id_cliente=?", [id], (error, results, fields) => {
+    mysql.getConnection((error,conn)=>{
+    conn.query("SELECT * FROM cliente WHERE id_cliente=?", [id], (error, results, fields) => {
+        conn.release();
         if (error) {
            
             return res.status(500).send({
@@ -145,11 +149,13 @@ router.get("/:id", (req, res, next) => {
             usuario: results[0]
         });
     });
+})
 });
 router.get("/", (req, res, next) => {
  
-
-    mysql.query("SELECT * FROM cliente ", (error, results, fields) => {
+    mysql.getConnection((error,conn)=>{
+    conn.query("SELECT * FROM cliente ", (error, results, fields) => {
+        conn.release();
         if (error) {
             return res.status(500).send({
                 error: error.message
@@ -167,6 +173,7 @@ router.get("/", (req, res, next) => {
             clientes: results
         });
     });
+});
 });
 
 router.post('/', (req, res, next) => {
@@ -204,7 +211,9 @@ router.post('/', (req, res, next) => {
     }
 
     // Verifica se o CPF já está cadastrado
-    mysql.query('SELECT * FROM cliente WHERE cpf = ?', [cpf], (error, results, fields) => {
+    mysql.getConnection((error,conn)=>{
+    conn.query('SELECT * FROM cliente WHERE cpf = ?', [cpf], (error, results, fields) => {
+        conn.release();
         if (error) {
             return res.status(500).send({
                 error: error.message,
@@ -220,6 +229,7 @@ router.post('/', (req, res, next) => {
 
         // Insere o novo cliente no banco de dados
         mysql.query('INSERT INTO cliente (nome, cpf, data, bairro, logradouro, cidade, uf, cep, contato) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)', [nome, cpf, data, bairro, logradouro, cidade, uf, cep, contato], (insertError, results, fields) => {
+            conn.release();
             if (insertError) {
                 return res.status(500).send({
                     error: insertError.message,
@@ -236,6 +246,7 @@ router.post('/', (req, res, next) => {
         });
     });
 });
+});
 
 
 router.delete("/:id", (req, res, next) => {
@@ -246,7 +257,9 @@ router.delete("/:id", (req, res, next) => {
     }
 
     // Verifica se o usuário existe antes de excluí-lo
-    mysql.query('SELECT * FROM usuario WHERE id = ?', [id], (error, results, fields) => {
+    mysql.getConnection((error,conn)=>{
+    conn.query('SELECT * FROM usuario WHERE id = ?', [id], (error, results, fields) => {
+        conn.release();
         if (error) {
             return res.status(500).send({
                 error: error.message
@@ -269,6 +282,7 @@ router.delete("/:id", (req, res, next) => {
             res.status(200).send({ mensagem: "Usuário excluído com sucesso!" });
         });
     });
+});
 });
 
 

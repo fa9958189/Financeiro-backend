@@ -5,22 +5,39 @@ const mysql = require("../mysql").pool;
 // Rota para cadastrar um orçamento
 router.post("/", (req, res) => {
     const { id } = req.body;
-     console.log(id)
-    // Insira os dados do orçamento no banco de dados
-    mysql.query(
-        "INSERT INTO orcamento (id_cliente) VALUES (?)",
-        [id],
-        (error, results, fields) => {
-            console.log(error.message)
-            if (error) {
-                console.error("Erro ao cadastrar orçamento:", error.message);
-                return res.status(500).json({ mensagem: "Erro ao cadastrar orçamento. " + error.message });
-            }
-            res.status(201).json({ mensagem: "Orçamento cadastrado com sucesso!" });
+
+    if (!id) {
+        console.log("ID do cliente não fornecido.");
+        return res.status(400).json({ mensagem: "ID do cliente é obrigatório." });
+    }
+
+    console.log("Tentando obter uma conexão do pool...");
+
+    mysql.getConnection((error, conn) => {
+        if (error) {
+            console.error("Erro ao obter conexão do pool:", error.message);
+            return res.status(500).json({ mensagem: "Erro ao conectar ao banco de dados. " + error.message });
         }
-    );
-});
- 
+
+        console.log("Conexão obtida com sucesso, executando a query...");
+
+        conn.query(
+            "INSERT INTO orcamento (id_cliente) VALUES (?)",
+            [id],
+            (error, results, fields) => {
+                conn.release();
+
+                if (error) {
+                    console.error("Erro ao cadastrar orçamento:", error.message);
+                    return res.status(500).json({ mensagem: "Erro ao cadastrar orçamento. " + error.message });
+                }
+
+                console.log("Orçamento cadastrado com sucesso!");
+                res.status(201).json({ mensagem: "Orçamento cadastrado com sucesso!" });
+            }
+        );
+        });
+    })
 
 // Rota para excluir um orçamento pelo número sequencial
 router.delete("/:id", (req, res) => {
@@ -29,8 +46,8 @@ router.delete("/:id", (req, res) => {
     if (!id) {
         return res.status(400).json({ error: "ID inválido" });
     }
-
-    mysql.query("DELETE FROM orcamento WHERE id=?", [id], (error, results, fields) => {
+    mysql.getConnection((error,conn)=>{
+    conn.query("DELETE FROM orcamento WHERE id=?", [id], (error, results, fields) => {
         if (error) {
             return res.status(500).json({ error: error.message });
         }
@@ -38,14 +55,15 @@ router.delete("/:id", (req, res) => {
         res.status(200).json({ mensagem: "Orçamento excluído com sucesso!" });
     });
 });
+});
 
 
 
 // Rota para buscar informações de um cliente pelo ID
 router.get("/:id", (req, res, next) => {
     const { id } = req.params;
-
-    mysql.query(`
+    mysql.getConnection((error,conn)=>{
+    conn.query(`
     SELECT  
     orcamento.id as id,
     orcamento.id_cliente as id_cliente, 
@@ -77,10 +95,13 @@ router.get("/:id", (req, res, next) => {
         });
     });
 });
+});
 
 // Rota para listar todos os orçamentos
 router.get("/", (req, res) => {
-    mysql.query(`
+    mysql.getConnection((error,conn)=>{
+        
+    conn.query(`
         SELECT  
             orcamento.id as id,
             orcamento.id_cliente as id_cliente, 
@@ -101,6 +122,7 @@ router.get("/", (req, res) => {
             orcamentos: results
         });
     });
+});
 });
 
 
