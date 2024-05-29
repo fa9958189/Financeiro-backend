@@ -80,6 +80,7 @@ router.delete("/:id", (req, res, next) => {
         }
 
         // Exclui o item de orçamento do banco de dados
+        mysql.getConnection((error,conn)=>{
         conn.query("DELETE FROM itens_orcamento WHERE id=?", [id], (deleteError, results, fields) => {
             conn.release();
             if (deleteError) {
@@ -90,6 +91,7 @@ router.delete("/:id", (req, res, next) => {
             res.status(200).send({ mensagem: "Item de orçamento excluído com sucesso!" });
         });
     });
+});
 });
 });
 

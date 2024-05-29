@@ -69,6 +69,7 @@ router.get("/:id", (req, res, next) => {
     orcamento.id_cliente as id_cliente, 
     orcamento.totalgeral as totalgeral,
     orcamento.data as data,
+    orcamento.situacao as situacao,
     cliente.nome as nome
             FROM orcamento 
             INNER JOIN cliente on

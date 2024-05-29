@@ -273,7 +273,8 @@ router.delete("/:id", (req, res, next) => {
         }
 
         // Exclui o usuário do banco de dados
-        mysql.query("DELETE FROM usuario WHERE id=?", [id], (deleteError, results, fields) => {
+        mysql.getConnection((error,conn)=>{
+        conn.query("DELETE FROM usuario WHERE id=?", [id], (deleteError, results, fields) => {
             if (deleteError) {
                 return res.status(500).send({
                     error: deleteError.message
@@ -282,6 +283,7 @@ router.delete("/:id", (req, res, next) => {
             res.status(200).send({ mensagem: "Usuário excluído com sucesso!" });
         });
     });
+});
 });
 });
 
