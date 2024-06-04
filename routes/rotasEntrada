@@ -85,11 +85,11 @@ router.get("/valorunitario/:id", (req, res, next) => {
             }
 
             // Remova as saídas de produtos excluídas da listagem de entradas
-           
+           const total = rows[0].valor_unitario + (rows[0].valor_unitario * rows[0].percentual)
 
             res.status(200).json({
                 mensagem: "Aqui estão todas as entradas de produto cadastradas",
-                valorunitario:rows[0].valor_unitario + (rows[0].valor_unitario * rows[0].percentual) 
+                valorunitario: total? total:0
             });
         });
     });

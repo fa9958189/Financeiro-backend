@@ -27,6 +27,7 @@ router.post("/", (req, res) => {
 // Rota para listar todos os orçamentos
 router.get("/:id", (req, res) => {
     const { id } = req.params;
+    console.log(id)
     const query = `
         SELECT  
             itens_orcamento.id as id,
