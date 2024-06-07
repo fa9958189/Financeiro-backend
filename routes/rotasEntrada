@@ -65,7 +65,7 @@ router.get("/", (req, res, next) => {
 // Rota para listar todas as entradas de produto
 router.get("/valorunitario/:id", (req, res, next) => {
     const {id} = req.params;
-  
+     console.log(id);
     mysql.getConnection((error, connection) => {
         if (error) {
             console.error("Erro ao obter conexão com o banco de dados:", error);
@@ -83,14 +83,23 @@ router.get("/valorunitario/:id", (req, res, next) => {
                 console.error("Erro ao executar consulta:", queryError);
                 return res.status(500).json({ mensagem: "Erro ao listar entradas de produto." });
             }
-
+           
+          if(rows && rows.length>0){
             // Remova as saídas de produtos excluídas da listagem de entradas
-           const total = rows[0].valor_unitario + (rows[0].valor_unitario * rows[0].percentual)
-
-            res.status(200).json({
-                mensagem: "Aqui estão todas as entradas de produto cadastradas",
+             const total = rows[0].valor_unitario + (rows[0].valor_unitario * rows[0].percentual);
+             res.status(200).json({
+                mensagem: "",
                 valorunitario: total? total:0
             });
+          }else{
+            res.status(200).json({
+                mensagem: "",
+                valorunitario: 0
+            });
+          }
+      
+
+
         });
     });
 });
