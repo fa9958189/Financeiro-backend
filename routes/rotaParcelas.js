@@ -1,0 +1,298 @@
+INSERT INTO `parcelas`(`id`, `numeroorcamento`, `valorparcela`, `quantidadeparcelas`) 
+
+
+
+const express = require("express");
+const router = express.Router();
+const mysql = require("../mysql").pool; // Importa o pool de conexões MySQL
+const bcrypt = require('bcrypt');
+const jwt = require('jsonwebtoken');
+const app = require("../app");
+
+
+
+router.patch("/", (req, res, next) => {
+  
+    const {
+        nome,
+        cpf,
+        data,
+        bairro,
+        logradouro,
+        cidade,
+        uf,
+        cep,
+        contato,
+        id
+    } = req.body;
+
+    // Validação dos campos
+    let msg = [];
+    if (!nome || nome.length < 3) {
+        msg.push({ mensagem: "Nome inválido! Deve ter pelo menos 3 caracteres." });
+    }
+    if (!cpf || cpf.length !== 11) {
+        msg.push({ mensagem: "CPF inválido! Deve conter 11 dígitos." });
+    }
+    if (!cep || cep.length !== 8) {
+        msg.push({ mensagem: "CEP inválido! Deve conter 8 dígitos." });
+    }
+    // Aqui você pode adicionar mais validações para os outros campos, se necessário
+
+    if (msg.length > 0) {
+      
+        return res.status(400).send({
+            mensagem: "Falha ao cadastrar cliente.",
+            erros: msg
+        });
+    }
+
+
+
+        // Insere o novo cliente no banco de dados
+        mysql.getConnection((error,conn)=>{
+        conn.query(' UPDATE cliente SET nome=?, cpf=?, data=?, bairro=?, logradouro=?, cidade=?, uf=?, cep=?, contato=? WHERE id_cliente=?', [
+            nome,
+            cpf,
+            data,
+            bairro,
+            logradouro,
+            cidade,
+            uf,
+            cep,
+            contato,
+            id
+        ],(insertError, results, fields) => {
+            conn.release();
+          console.log(insertError)
+            if (insertError) {
+                return res.status(500).send({
+                    error: insertError.message,
+                    response: null
+                });
+            }
+            res.status(201).send({
+                mensagem: "Cliente cadastrado com sucesso!",
+                cliente: {
+                    id: results.insertId,
+                    nome: nome
+                }
+            });
+        });
+    })
+});
+router.post("/login", (req, res, next) => {
+    const { email, senha } = req.body;
+    mysql.getConnection((error,conn)=>{
+    conn.query("SELECT * FROM usuario WHERE email = ?", [email], (error, results, fields) => {
+        conn.release();
+        if (error) {
+            console.error("Erro ao buscar usuário:", error.message);
+            return res.status(500).send({
+                error: error.message
+            });
+        }
+
+        if (results.length === 0) {
+            console.log("Usuário não encontrado");
+            return res.status(401).send({
+                mensagem: "Usuário não encontrado."
+            });
+        }
+
+        const usuario = results[0];
+
+        bcrypt.compare(senha, usuario.senha, (bcryptError, result) => {
+            if (bcryptError) {
+                console.error("Erro ao comparar senhas:", bcryptError.message);
+                return res.status(500).send({
+                    error: bcryptError.message
+                });
+            }
+
+            if (!result) {
+                console.log("Senha incorreta");
+                return res.status(401).send({
+                    mensagem: "Senha incorreta."
+                });
+            }
+
+            console.log("Login bem sucedido");
+
+            const token = jwt.sign({ id: usuario.id, email: usuario.email }, 'secreto', { expiresIn: '1h' });
+
+            res.status(200).send({
+                mensagem: "Login bem sucedido.",
+                token: token
+            });
+        });
+    });
+});
+});
+
+router.get("/:id", (req, res, next) => {
+    const { id } = req.params;
+    mysql.getConnection((error,conn)=>{
+    conn.query("SELECT * FROM cliente WHERE id_cliente=?", [id], (error, results, fields) => {
+        conn.release();
+        if (error) {
+           
+            return res.status(500).send({
+                error: error.message
+            });
+        }
+
+        if (results.length === 0) {
+            return res.status(404).send({
+                mensagem: "Cliente não encontrado."
+            });
+        }
+
+        res.status(200).send({
+            mensagem: "Aqui está o cliente solicitado",
+            usuario: results[0]
+        });
+    });
+})
+});
+router.get("/", (req, res, next) => {
+ 
+    mysql.getConnection((error,conn)=>{
+    conn.query("SELECT * FROM cliente ", (error, results, fields) => {
+        conn.release();
+        if (error) {
+            return res.status(500).send({
+                error: error.message
+            });
+        }
+
+        if (results.length === 0) {
+            return res.status(404).send({
+                mensagem: "Cliente não encontrado."
+            });
+        }
+
+        res.status(200).send({
+            mensagem: "Aqui está o usuário solicitado",
+            clientes: results
+        });
+    });
+});
+});
+
+router.post('/', (req, res, next) => {
+  
+    const {
+        nome,
+        cpf,
+        data,
+        bairro,
+        logradouro,
+        cidade,
+        uf,
+        cep,
+        contato
+    } = req.body;
+
+    // Validação dos campos
+    let msg = [];
+    if (!nome || nome.length < 3) {
+        msg.push({ mensagem: "Nome inválido! Deve ter pelo menos 3 caracteres." });
+    }
+    if (!cpf || cpf.length !== 11) {
+        msg.push({ mensagem: "CPF inválido! Deve conter 11 dígitos." });
+    }
+    if (!cep || cep.length !== 8) {
+        msg.push({ mensagem: "CEP inválido! Deve conter 8 dígitos." });
+    }
+    // Aqui você pode adicionar mais validações para os outros campos, se necessário
+
+    if (msg.length > 0) {
+        return res.status(400).send({
+            mensagem: "Falha ao cadastrar cliente.",
+            erros: msg
+        });
+    }
+
+    // Verifica se o CPF já está cadastrado
+    mysql.getConnection((error,conn)=>{
+    conn.query('SELECT * FROM cliente WHERE cpf = ?', [cpf], (error, results, fields) => {
+        conn.release();
+        if (error) {
+            return res.status(500).send({
+                error: error.message,
+                response: null
+            });
+        }
+
+        if (results.length > 0) {
+            return res.status(400).send({
+                mensagem: "CPF já cadastrado."
+            });
+        }
+
+        // Insere o novo cliente no banco de dados
+        mysql.query('INSERT INTO cliente (nome, cpf, data, bairro, logradouro, cidade, uf, cep, contato) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)', [nome, cpf, data, bairro, logradouro, cidade, uf, cep, contato], (insertError, results, fields) => {
+            conn.release();
+            if (insertError) {
+                return res.status(500).send({
+                    error: insertError.message,
+                    response: null
+                });
+            }
+            res.status(201).send({
+                mensagem: "Cliente cadastrado com sucesso!",
+                cliente: {
+                    id: results.insertId,
+                    nome: nome
+                }
+            });
+        });
+    });
+});
+});
+
+
+router.delete("/:id", (req, res, next) => {
+    const { id } = req.params;
+
+    if (!id) {
+        return res.status(400).send({ error: "Parâmetros inválidos" });
+    }
+
+    // Verifica se o usuário existe antes de excluí-lo
+    mysql.getConnection((error,conn)=>{
+    conn.query('SELECT * FROM usuario WHERE id = ?', [id], (error, results, fields) => {
+        conn.release();
+        if (error) {
+            return res.status(500).send({
+                error: error.message
+            });
+        }
+
+        if (results.length === 0) {
+            return res.status(404).send({
+                mensagem: "Usuário não encontrado."
+            });
+        }
+
+        // Exclui o usuário do banco de dados
+        mysql.getConnection((error,conn)=>{
+        conn.query("DELETE FROM usuario WHERE id=?", [id], (deleteError, results, fields) => {
+            if (deleteError) {
+                return res.status(500).send({
+                    error: deleteError.message
+                });
+            }
+            res.status(200).send({ mensagem: "Usuário excluído com sucesso!" });
+        });
+    });
+});
+});
+});
+
+
+
+
+
+module.exports = router;
